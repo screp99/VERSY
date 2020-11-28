@@ -17,7 +17,9 @@ import aqua.blatt1.common.Direction;
 import aqua.blatt1.common.FishModel;
 import aqua.blatt1.common.msgtypes.SnapshotCollectorToken;
 
-enum RecordingMode { IDLE, LEFT, RIGHT, BOTH }
+enum RecordingMode {
+	IDLE, LEFT, RIGHT, BOTH
+}
 
 @SuppressWarnings("deprecation")
 public class TankModel extends Observable implements Iterable<FishModel> {
@@ -94,8 +96,10 @@ public class TankModel extends Observable implements Iterable<FishModel> {
 
 			fish.update();
 
-			if (fish.hitsEdge())
+			if (fish.hitsEdge()) {
 				forwarder.handOffFish(fish, this);
+				this.currentNumberOfFishies--;
+			}
 
 			if (fish.disappears())
 				it.remove();
@@ -141,7 +145,7 @@ public class TankModel extends Observable implements Iterable<FishModel> {
 	protected synchronized Boolean hasToken() {
 		return this.hasToken;
 	}
-	
+
 	protected synchronized void initiateSnapshot() {
 		this.isInitiator = true;
 		startFishCounter();
@@ -167,20 +171,20 @@ public class TankModel extends Observable implements Iterable<FishModel> {
 			}
 		}
 	}
-	
+
 	private synchronized void handOffCollector() {
 		this.collector.addNumberOfFishies(this.currentNumberOfFishies);
 		forwarder.handOffCollector(this, collector);
 		this.currentNumberOfFishies = 0;
 		this.stateOfLeft = new ArrayList<FishModel>();
-		this.stateOfRight= new ArrayList<FishModel>();
+		this.stateOfRight = new ArrayList<FishModel>();
 		this.collector = null;
 	}
-	
+
 	synchronized void recieveMarkerFromRight() {
 		if (this.recordingMode == RecordingMode.IDLE) {
 			startFishCounter();
-			this.recordingMode = RecordingMode.LEFT;			
+			this.recordingMode = RecordingMode.LEFT;
 			forwarder.mark(this);
 		} else {
 			if (this.recordingMode == RecordingMode.BOTH) {
@@ -191,7 +195,7 @@ public class TankModel extends Observable implements Iterable<FishModel> {
 			}
 		}
 	}
-	
+
 	private synchronized void startFishCounter() {
 		Iterator<FishModel> it = iterator();
 		currentNumberOfFishies = 0;

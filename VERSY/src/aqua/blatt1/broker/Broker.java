@@ -3,8 +3,6 @@ package aqua.blatt1.broker;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import javax.swing.JOptionPane;
 
@@ -31,7 +29,7 @@ public class Broker {
 		ExecutorService threadPool = Executors.newFixedThreadPool(POOL_SIZE);
 		new Thread(stopServerInterface()).start();
 		while (!stopRequested) {
-			Message actualMessage = endpoint.nonBlockingReceive();
+			Message actualMessage = endpoint.blockingReceive();
 			threadPool.execute(() -> {
 				if (actualMessage.getPayload() instanceof RegisterRequest) {
 					register(actualMessage.getSender());
