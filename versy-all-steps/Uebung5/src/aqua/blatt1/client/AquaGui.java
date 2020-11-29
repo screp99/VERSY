@@ -1,7 +1,5 @@
 package aqua.blatt1.client;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
@@ -14,12 +12,12 @@ import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 @SuppressWarnings("serial")
 public class AquaGui extends JFrame implements Runnable, Observer {
-	private final List<JMenuItem> fishMenuItems = Collections.synchronizedList(new ArrayList<JMenuItem>());
+	private final List<JMenuItem> fishMenuItems = Collections
+			.synchronizedList(new ArrayList<JMenuItem>());
 
 	private final JMenu searchMenu;
 	private final Runnable updateRunnable;
@@ -51,18 +49,7 @@ public class AquaGui extends JFrame implements Runnable, Observer {
 		JMenuItem gsMenuItem = new JMenuItem("Global Snapshot");
 		toolsMenu.add(gsMenuItem);
 
-		JMenuItem sgsMenuItem = new JMenuItem("Show Global Snapshot");
-		toolsMenu.add(sgsMenuItem);
-
-		gsMenuItem.addActionListener(new SnapshotController(this, tankModel));
-
-		sgsMenuItem.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				JOptionPane.showMessageDialog(null,
-						"Number of fishies in current global snapshot: " + tankModel.snapshot);
-			}
-		});
+		gsMenuItem.addActionListener(new SnapshotController(tankModel));
 
 		searchMenu = new JMenu("Toggle Fish Color...");
 		toolsMenu.add(searchMenu);
@@ -72,7 +59,7 @@ public class AquaGui extends JFrame implements Runnable, Observer {
 			@Override
 			public void run() {
 				setTitle(tankModel.getId());
-
+			
 				int size = fishMenuItems.size();
 				while (tankModel.getFishCounter() > size) {
 					String fishId = "fish" + (++size) + "@" + tankModel.getId();
