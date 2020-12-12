@@ -3,8 +3,10 @@ package aqua.blatt1.client;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Observable;
 import java.util.Random;
 import java.util.Set;
@@ -19,6 +21,10 @@ import aqua.blatt1.common.msgtypes.SnapshotCollectorToken;
 
 enum RecordingMode {
 	IDLE, LEFT, RIGHT, BOTH
+}
+
+enum Location {
+	HERE, LEFT, RIGHT
 }
 
 @SuppressWarnings("deprecation")
@@ -43,6 +49,7 @@ public class TankModel extends Observable implements Iterable<FishModel> {
 	private volatile RecordingMode recordingMode = RecordingMode.IDLE;
 	protected volatile List<FishModel> stateOfRight = new ArrayList<FishModel>();
 	protected volatile List<FishModel> stateOfLeft = new ArrayList<FishModel>();
+	protected volatile Map<String, Location> fishLocations = new HashMap<>();
 
 	public TankModel(ClientCommunicator.ClientForwarder forwarder) {
 		this.fishies = Collections.newSetFromMap(new ConcurrentHashMap<FishModel, Boolean>());
@@ -63,12 +70,15 @@ public class TankModel extends Observable implements Iterable<FishModel> {
 					rand.nextBoolean() ? Direction.LEFT : Direction.RIGHT);
 
 			fishies.add(fish);
+			fishLocations.put(fish.getId(), Location.HERE);
 		}
 	}
 
 	synchronized void receiveFish(FishModel fish) {
 		fish.setToStart();
 		fishies.add(fish);
+		fishLocations.put(fish.getId(), Location.HERE);
+
 		if (this.recordingMode != RecordingMode.IDLE) {
 			if (this.recordingMode != RecordingMode.RIGHT && fish.getDirection() == Direction.RIGHT) {
 				this.stateOfLeft.add(fish);
@@ -98,6 +108,10 @@ public class TankModel extends Observable implements Iterable<FishModel> {
 
 			if (fish.hitsEdge()) {
 				forwarder.handOffFish(fish, this);
+				if (fish.getDirection() == Direction.RIGHT)
+					fishLocations.put(fish.getId(), Location.RIGHT);
+				else
+					fishLocations.put(fish.getId(), Location.LEFT);
 				this.currentNumberOfFishies--;
 			}
 
@@ -212,6 +226,34 @@ public class TankModel extends Observable implements Iterable<FishModel> {
 			this.snapshot = collector.getNumberOfFishies();
 		} else if (this.recordingMode == RecordingMode.IDLE) {
 			handOffCollector();
+		}
+	}
+
+	public synchronized void locateFishGlobally(String fishId) {
+		Location location = this.fishLocations.get(fishId);
+		if (location == null) {
+			return;
+		}
+		switch (location) {
+		case HERE:
+			locateFishLocally(fishId);
+			break;
+		case RIGHT:
+			forwarder.sendLocationRequest(this.rightNeighbor, fishId);
+			break;
+		case LEFT:
+			forwarder.sendLocationRequest(this.leftNeighbor, fishId);
+			break;
+		}
+	}
+
+	private void locateFishLocally(String fishId) {
+		Iterator<FishModel> it = iterator();
+		while (it.hasNext()) {
+			FishModel fish = it.next();
+			if (fish.getId().equals(fishId)) {
+				fish.toggle();
+			}
 		}
 	}
 
